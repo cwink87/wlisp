@@ -1,8 +1,6 @@
 #include "wlisp.hpp"
 
 /*!
- * \todo Add line and column information to the Token object.
- * \todo Ensure that all AST based objects accept only AST or Token (to assist with tracking).
  * \todo Create an exception that accepts a token and prints out line/column information from the token object.
  * \todo Implement tail end recursion optimization.
  * \todo Add while implementation.

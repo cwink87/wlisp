@@ -1,4 +1,7 @@
 #include "wlisp.hpp"
+#include <sstream>
+
+constexpr auto epsilon = 0.00001; // The variants for double precision equality comparison.
 
 auto string_from(const Variant_type &variant_type) -> std::string
 {
@@ -114,8 +117,19 @@ auto string_from(const Variant &variant) -> std::string
     return variant.string();
   case Variant_type::boolean:
     return variant.boolean() ? "true" : "false";
-  case Variant_type::list:
-    return "[list]";
+  case Variant_type::list: {
+    if (variant.list().empty()) {
+      return "{}";
+    }
+    auto os = std::ostringstream();
+    auto i = std::cbegin(variant.list());
+    os << "{" << string_from(*i);
+    for (auto j = std::cend(variant.list()); i != j; ++i) {
+      os << "," << string_from(*i);
+    }
+    os << "}";
+    return os.str();
+  }
   case Variant_type::function:
     return "[function]";
   }
@@ -131,7 +145,7 @@ auto operator==(const Variant &left, const Variant &right) -> bool
   case Variant_type::nil:
     return true;
   case Variant_type::number:
-    return std::abs(left.number() - right.number()) < 0.00001;
+    return std::abs(left.number() - right.number()) < epsilon;
   case Variant_type::boolean:
     return left.boolean() == right.boolean();
   case Variant_type::string:
@@ -155,7 +169,9 @@ auto operator*(const Variant &left, const Variant &right) -> Variant { return Va
 auto operator/(const Variant &left, const Variant &right) -> Variant
 {
   if (right.number() == 0.0) {
-    throw std::runtime_error("Divide by zero.");
+    auto os = std::ostringstream();
+    os << "Divide by zero: " << left.number() << " / " << right.number() << ".";
+    throw std::runtime_error(os.str());
   }
   return Variant(left.number() / right.number());
 }

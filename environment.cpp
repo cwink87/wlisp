@@ -34,7 +34,9 @@ const Variant &Environment_base::get(const std::string &key) const
       return impl->parent->get(key);
     }
   }
-  throw std::runtime_error("Key does not exist in environment.");
+  auto os = std::ostringstream();
+  os << "Key '" << key << "' does not exist in the current environment.";
+  throw std::runtime_error(os.str());
 }
 
 auto Environment_base::set(std::string key, Variant value) noexcept -> void
@@ -60,12 +62,11 @@ auto Environment_base::to_string() const noexcept -> std::string
   os << "{" << i->first << "=" << string_from(i->second) << ",";
   ++i;
   for (auto j = std::cend(impl->map); i != j; ++i) {
-
     os << "," << i->first << "=" << string_from(i->second);
   }
   os << "}";
   if (impl->parent) {
-    os << "," << impl->parent->to_string();
+    os << "<-" << impl->parent->to_string();
   }
   return os.str();
 }

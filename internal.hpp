@@ -15,6 +15,8 @@ class Token final {
 public:
   Token();
   Token(const Token_type token_type, std::string token_value);
+  Token(const Token_type token_type, std::string token_value, const std::size_t line_number,
+        const std::size_t column_number);
 
   ~Token() noexcept = default;
   Token(const Token &) = default;
@@ -24,6 +26,8 @@ public:
 
   const Token_type &type() const noexcept;
   const std::string &value() const noexcept;
+  auto line_number() const noexcept -> std::size_t;
+  auto column_number() const noexcept -> std::size_t;
 
 private:
   struct Impl;
@@ -232,5 +236,7 @@ private:
 };
 
 auto parse_from(Token_list &token_list) -> AST;
+
+auto function_info_from(const Token &token) -> Function_info;
 
 #endif // INTERNAL_HPP

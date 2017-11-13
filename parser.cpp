@@ -1,4 +1,5 @@
 #include "internal.hpp"
+#include <sstream>
 
 auto parse_begin_from(Token_list &token_list) -> AST
 {
@@ -19,12 +20,20 @@ auto parse_lambda_from(Token_list &token_list) -> AST
   while (token_list.front().type() != Token_type::right_parenthesis) {
     parameters.emplace_back(consume_from(token_list));
   }
-  if (consume_from(token_list).type() != Token_type::right_parenthesis) {
-    throw std::runtime_error("Syntax error.");
+  token = consume_from(token_list);
+  if (token.type() != Token_type::right_parenthesis) {
+    auto os = std::ostringstream();
+    os << "Syntax error for '" << token.value() << "' at line " << token.line_number() << " column "
+       << token.column_number() << ".";
+    throw std::runtime_error(os.str());
   }
   auto body = parse_from(token_list);
-  if (consume_from(token_list).type() != Token_type::right_parenthesis) {
-    throw std::runtime_error("Syntax error.");
+  token = consume_from(token_list);
+  if (token.type() != Token_type::right_parenthesis) {
+    auto os = std::ostringstream();
+    os << "Syntax error for '" << token.value() << "' at line " << token.line_number() << " column "
+       << token.column_number() << ".";
+    throw std::runtime_error(os.str());
   }
   return Lambda(parameters, body).clone();
 }
@@ -35,8 +44,12 @@ auto parse_if_from(Token_list &token_list) -> AST
   auto test = parse_from(token_list);
   auto consequent = parse_from(token_list);
   auto alternate = parse_from(token_list);
-  if (consume_from(token_list).type() != Token_type::right_parenthesis) {
-    throw std::runtime_error("Syntax error.");
+  token = consume_from(token_list);
+  if (token.type() != Token_type::right_parenthesis) {
+    auto os = std::ostringstream();
+    os << "Syntax error for '" << token.value() << "' at line " << token.line_number() << " column "
+       << token.column_number() << ".";
+    throw std::runtime_error(os.str());
   }
   return If(test, consequent, alternate).clone();
 }
@@ -46,8 +59,12 @@ auto parse_set_from(Token_list &token_list) -> AST
   auto token = consume_from(token_list);
   auto identifier = consume_from(token_list);
   auto value = parse_from(token_list);
-  if (consume_from(token_list).type() != Token_type::right_parenthesis) {
-    throw std::runtime_error("Syntax error.");
+  token = consume_from(token_list);
+  if (token.type() != Token_type::right_parenthesis) {
+    auto os = std::ostringstream();
+    os << "Syntax error for '" << token.value() << "' at line " << token.line_number() << " column "
+       << token.column_number() << ".";
+    throw std::runtime_error(os.str());
   }
   return Set(identifier, value).clone();
 }
@@ -57,8 +74,12 @@ auto parse_operation_from(Token_list &token_list) -> AST
   auto token = consume_from(token_list);
   auto left = parse_from(token_list);
   auto right = parse_from(token_list);
-  if (consume_from(token_list).type() != Token_type::right_parenthesis) {
-    throw std::runtime_error("Syntax error.");
+  auto token2 = consume_from(token_list);
+  if (token2.type() != Token_type::right_parenthesis) {
+    auto os = std::ostringstream();
+    os << "Syntax error for '" << token2.value() << "' at line " << token2.line_number() << " column "
+       << token2.column_number() << ".";
+    throw std::runtime_error(os.str());
   }
   return Operator(token, left, right).clone();
 }
@@ -67,8 +88,12 @@ auto parse_print_line_from(Token_list &token_list) -> AST
 {
   auto token = consume_from(token_list);
   auto parameter = parse_from(token_list);
-  if (consume_from(token_list).type() != Token_type::right_parenthesis) {
-    throw std::runtime_error("Syntax error.");
+  token = consume_from(token_list);
+  if (token.type() != Token_type::right_parenthesis) {
+    auto os = std::ostringstream();
+    os << "Syntax error for '" << token.value() << "' at line " << token.line_number() << " column "
+       << token.column_number() << ".";
+    throw std::runtime_error(os.str());
   }
   return Print_line(parameter).clone();
 }
@@ -119,5 +144,8 @@ auto parse_from(Token_list &token_list) -> AST
       token.type() == Token_type::nil) {
     return Atomic(token).clone();
   }
-  throw std::runtime_error("Unknown token type.");
+  auto os = std::ostringstream();
+  os << "Unknown token '" << token.value() << "' at line " << token.line_number() << " column " << token.column_number()
+     << ".";
+  throw std::runtime_error(os.str());
 }

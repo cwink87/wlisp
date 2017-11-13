@@ -1,5 +1,6 @@
 #include "internal.hpp"
 #include <iostream>
+#include <sstream>
 
 AST_base::~AST_base() noexcept = default;
 
@@ -45,10 +46,15 @@ auto Procedure::clone() const noexcept -> AST { return std::make_shared<Procedur
 auto Procedure::execute(Environment environment, const Variant_list &variant_list) const -> Variant
 {
   if (!environment->has(impl->identifier.value())) {
-    throw std::runtime_error("Could not find procedure in environment.");
+    auto os = std::ostringstream();
+    os << "Could not find procedure '" << impl->identifier.value() << "' at line " << impl->identifier.line_number()
+       << " column " << impl->identifier.column_number() << " in environment.";
+    throw std::runtime_error(os.str());
   }
-  return environment->get(impl->identifier.value())
-      .function()(environment, impl->arguments->execute(environment, variant_list).list());
+  auto function = environment->get(impl->identifier.value()).function();
+  auto evaluated = function(function_info_from(impl->identifier), environment,
+                            impl->arguments->execute(environment, variant_list).list());
+  return evaluated;
 }
 
 Procedure::~Procedure() noexcept = default;
@@ -70,10 +76,13 @@ auto Lambda::execute(Environment, const Variant_list &) const -> Variant
 {
   auto parameters = impl->parameters;
   auto body = impl->body;
-  return Variant([parameters, body](Environment environment, const Variant_list &arguments) {
+  return Variant([parameters, body](const Function_info &info, Environment environment, const Variant_list &arguments) {
     auto new_environment = create_environment();
     if (arguments.size() != parameters.size()) {
-      throw std::runtime_error("Invalid number of arguments.");
+      auto os = std::ostringstream();
+      os << "Procedure '" + info.name() + "' at line " << info.line_number() << " column " << info.column_number()
+         << " has an invalid number of arguments.";
+      throw std::runtime_error(os.str());
     }
     auto k = std::cbegin(arguments);
     for (auto i = std::cbegin(parameters), j = std::cend(parameters); i != j; ++i, ++k) {
@@ -149,7 +158,10 @@ auto Operator::execute(Environment environment, const Variant_list &variant_list
   if (impl->operation.value() == "=") {
     return Variant(impl->left->execute(environment, variant_list) == impl->right->execute(environment, variant_list));
   }
-  throw std::runtime_error("Invalid impl->operation.");
+  auto os = std::ostringstream();
+  os << "Invalid operation '" << impl->operation.value() << "' at line " << impl->operation.line_number() << " column "
+     << impl->operation.column_number() << ".";
+  throw std::runtime_error(os.str());
 }
 
 Operator::~Operator() noexcept = default;
@@ -181,7 +193,10 @@ auto Variable::clone() const noexcept -> AST { return std::make_shared<Variable>
 auto Variable::execute(Environment environment, const Variant_list &) const -> Variant
 {
   if (!environment->has(impl->token.value())) {
-    throw std::runtime_error("Could not find variable in environment.");
+    auto os = std::ostringstream();
+    os << "Could not find variable '" << impl->token.value() << "' at line " << impl->token.line_number() << " column "
+       << impl->token.column_number() << " in environment.";
+    throw std::runtime_error(os.str());
   }
   return environment->get(impl->token.value());
 }

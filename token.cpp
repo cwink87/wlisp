@@ -1,4 +1,5 @@
 #include "internal.hpp"
+#include <sstream>
 
 auto string_from(const Token_type &token_type) -> std::string
 {
@@ -23,6 +24,8 @@ auto string_from(const Token_type &token_type) -> std::string
 
 struct Token::Impl final {
   std::string token_value = "";
+  std::size_t line_number = 0;
+  std::size_t column_number = 0;
   Token_type token_type = Token_type::nil;
   char padding[4] = {0};
 };
@@ -35,9 +38,21 @@ Token::Token(const Token_type token_type, std::string token_value) : Token()
   impl->token_type = token_type;
 }
 
+Token::Token(const Token_type token_type, std::string token_value, const std::size_t line_number,
+             const std::size_t column_number)
+    : Token(token_type, token_value)
+{
+  impl->line_number = line_number;
+  impl->column_number = column_number;
+}
+
 const Token_type &Token::type() const noexcept { return impl->token_type; }
 
 const std::string &Token::value() const noexcept { return impl->token_value; }
+
+auto Token::line_number() const noexcept -> std::size_t { return impl->line_number; }
+
+auto Token::column_number() const noexcept -> std::size_t { return impl->column_number; }
 
 auto consume_from(Token_list &token_list) -> Token
 {
@@ -48,7 +63,9 @@ auto consume_from(Token_list &token_list) -> Token
 
 auto string_from(const Token &token) noexcept -> std::string
 {
-  return std::string("{") + string_from(token.type()) + "," + token.value() + "}";
+  auto os = std::ostringstream();
+  os << "{" << string_from(token.type()) << "," << token.value() << "}";
+  return os.str();
 }
 
 auto variant_from(const Token &token) -> Variant
@@ -67,7 +84,9 @@ auto variant_from(const Token &token) -> Variant
   case Token_type::right_parenthesis:
     break;
   }
-  throw std::runtime_error("Can't convert token to variant.");
+  auto os = std::ostringstream();
+  os << "Can't convert token '" << token.value() << "' to variant.";
+  throw std::runtime_error(os.str());
 }
 
 auto operator==(const Token &left, const Token &right) -> bool

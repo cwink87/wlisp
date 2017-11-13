@@ -5,6 +5,29 @@
 #include <memory>
 #include <vector>
 
+/*!
+ * \brief The Function_info class contains information on a function (name, line number, and column number).
+ */
+class Function_info final {
+public:
+  Function_info(std::string name, const std::size_t line_number, const std::size_t column_number) noexcept;
+
+  Function_info() = delete;
+  ~Function_info() noexcept = default;
+  Function_info(const Function_info &) noexcept = default;
+  Function_info(Function_info &&) noexcept = default;
+  Function_info &operator=(const Function_info &) noexcept = default;
+  Function_info &operator=(Function_info &&) noexcept = default;
+
+  const std::string &name() const noexcept;
+  auto line_number() const noexcept -> std::size_t;
+  auto column_number() const noexcept -> std::size_t;
+
+private:
+  struct Impl;
+  std::shared_ptr<Impl> impl;
+};
+
 class Environment_base;
 
 /*!
@@ -26,7 +49,29 @@ class Variant;
 
 using Variant_list = std::vector<Variant>;
 
-using Variant_function = std::function<Variant(Environment, const Variant_list &)>;
+/*!
+ * \brief Represents a function variant. These can be used to extend the environment. For instance,
+ *        you can add your own functionality by running:
+ *
+ *          auto env = create_environment();
+ *          env.set("addition",
+ *            [](const Function &info, Environment environment, const Variant_list &arguments) {
+ *              if (arguments.size() != 2) {
+ *                auto os = std::ostringstream();
+ *                os << "Invalid number of arguments for '" << identifier.value() << "' on line "
+ *                   << identifier.line_number() << " column " << identifier.column_number() << ".";
+ *                throw std::runtime_error(os.str());
+ *              return arguments[0] + arguments[1];
+ *          });
+ *
+ *        where info is a Function_info object that contains the name of the function and its location in the
+ *        code, environment is the current environment passed, and arguments is the arguments for
+ *        your function.
+ *
+ *        This peice of code would be called like so,
+ *          (addition 5 4)
+ */
+using Variant_function = std::function<Variant(const Function_info &, Environment, const Variant_list &)>;
 
 /*!
  * \brief The Variant class is used to communicate between the interpreter and
