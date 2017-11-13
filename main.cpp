@@ -4,6 +4,8 @@
  * \todo Create an exception that accepts a token and prints out line/column information from the token object.
  * \todo Implement tail end recursion optimization.
  * \todo Add while implementation.
+ * \todo Load script from file.
+ * \todo Provide proper repl.
  */
 
 /*
